@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Costa Booking Finance - D</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body { background: #f8fafc; transition: background .2s, color .2s; }
+    .card { background: #ffffff; border-radius: 16px; box-shadow: 0 8px 24px rgba(15,23,42,0.08); }
+    .mono { font-variant-numeric: tabular-nums; }
+    input[readonly], textarea[readonly] { background: #f8fafc; }
+    body.dark { background: #0b1220; color: #e2e8f0; }
+    body.dark .card { background: #111a2e; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    body.dark input, body.dark textarea, body.dark select { background: #0b1220 !important; color: #e2e8f0; border-color: #334155; }
+    body.dark .text-slate-500 { color: #94a3b8; }
+    body.dark .text-slate-800 { color: #e2e8f0; }
+    body.dark .border { border-color: #334155 !important; }
+    body.dark .bg-slate-50 { background: #0b1220 !important; }
+    body.dark hr { border-color: #334155; }
+    body.dark .bg-slate-900 { background: #334155; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <div class="max-w-7xl mx-auto p-6">
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-lg font-bold">CB</div>
+        <div>
+          <h1 class="text-3xl font-bold">Costa Booking Finance</h1>
+          <p class="text-slate-500">Full booking tracker - Version D</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="darkModeBtn" class="rounded-xl border border-slate-300 px-4 py-2">🌙 Dark</button>
+        <button id="backupBtn" class="rounded-xl border border-slate-300 px-4 py-2">⬇ Backup</button>
+        <label class="rounded-xl border border-slate-300 px-4 py-2 cursor-pointer">
+          ⬆ Restore
+          <input id="restoreInput" type="file" accept=".json" class="hidden" />
+        </label>
+      </div>
+    </header>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="card p-5">
+        <h2 class="text-xl font-semibold mb-4">New Booking</h2>
+
+        <form id="bookingForm" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium mb-1">Property</label>
+            <div class="flex gap-2">
+              <select id="property" class="flex-1 rounded-xl border border-slate-300 px-3 py-2"></select>
+              <button type="button" id="addPropertyBtn" class="rounded-xl border border-slate-300 px-3">+</button>
+              <button type="button" id="removePropertyBtn" class="rounded-xl border border-slate-300 px-3">−</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Description</label>
+            <textarea id="description" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2" placeholder="Example: Airbnb booking - John"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Start Date</label>
+            <input id="startDate" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">End Date</label>
+            <input id="endDate" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2" required />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Days</label>
+            <input id="days" type="number" class="w-full rounded-xl border border-slate-300 px-3 py-2" readonly />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">People</label>
+            <input id="people" type="number" min="1" value="1" class="w-full rounded-xl border border-slate-300 px-3 py-2" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Amount Paid by Customer</label>
+            <input id="amountPaid" type="number" step="0.01" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Amount Received in Account</label>
+            <input id="amountReceived" type="number" step="0.01" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Quarter Taxes</label>
+            <input id="quarterTaxes" type="number" step="0.01" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2" />
+          </div>
+
+          <div class="rounded-2xl bg-slate-50 p-4 text-sm space-y-2">
+            <div class="flex justify-between"><span>Platform Fee</span><span id="previewPlatformFee" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>Cleaning</span><span id="previewCleaning" class="mono font-semibold">€95.00</span></div>
+            <div class="flex justify-between"><span>Agency with IGIC</span><span id="previewAgencyFeeIgic" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>Water</span><span id="previewWater" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>Electricity</span><span id="previewElectricity" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>Internet</span><span id="previewInternet" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>Mortgage Interest</span><span id="previewMortgage" class="mono font-semibold">€0.00</span></div>
+            <div class="flex justify-between"><span>IGIC</span><span id="previewIgic" class="mono font-semibold">€0.00</span></div>
+            <hr>
+            <div class="flex justify-between text-base"><span class="font-semibold">Net</span><span id="previewNet" class="mono font-bold">€0.00</span></div>
+            <div class="flex justify-between text-base"><span class="font-semibold">Tax 19%</span><span id="previewTax" class="mono font-bold">€0.00</span></div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button type="submit" id="submitBtn" class="flex-1 rounded-xl bg-slate-900 text-white py-2.5 font-medium">Save</button>
+            <button type="button" id="resetBtn" class="flex-1 rounded-xl border border-slate-300 py-2.5 font-medium">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="lg:col-span-2 space-y-6">
+        <div class="card p-5">
+          <div class="flex flex-wrap items-end gap-3 justify-between mb-2">
+            <div>
+              <h2 class="text-xl font-semibold">Filter by Property</h2>
+              <p class="text-sm text-slate-500">All stats/charts below follow this filter</p>
+            </div>
+            <div>
+              <select id="propertyFilter" class="rounded-xl border border-slate-300 px-3 py-2">
+                <option value="__all__">All Properties</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-4">
+          <div class="card p-4"><div class="text-sm text-slate-500">Total Received</div><div id="kpiReceived" class="text-2xl font-bold mono">€0.00</div></div>
+          <div class="card p-4"><div class="text-sm text-slate-500">Total Net</div><div id="kpiNet" class="text-2xl font-bold mono">€0.00</div></div>
+          <div class="card p-4"><div class="text-sm text-slate-500">Total Tax 19%</div><div id="kpiTax" class="text-2xl font-bold mono">€0.00</div></div>
+          <div class="card p-4"><div class="text-sm text-slate-500">Bookings</div><div id="kpiBookings" class="text-2xl font-bold mono">0</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex flex-wrap items-end gap-4 justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-semibold">Monthly Summary</h2>
+              <p class="text-sm text-slate-500">Totals by selected month and year</p>
+            </div>
+            <div class="flex gap-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">Month</label>
+                <select id="monthFilter" class="rounded-xl border border-slate-300 px-3 py-2"></select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Year</label>
+                <select id="monthYearFilter" class="rounded-xl border border-slate-300 px-3 py-2"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-5 gap-4">
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Paid by Customer</div><div id="monthPaid" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Received</div><div id="monthReceived" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Expenses</div><div id="monthExpenses" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Net</div><div id="monthNet" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Tax 19%</div><div id="monthTax" class="text-xl font-bold mono">€0.00</div></div>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex flex-wrap items-end gap-4 justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-semibold">Quarterly Summary</h2>
+              <p class="text-sm text-slate-500">Totals by selected quarter and year</p>
+            </div>
+            <div class="flex gap-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">Quarter</label>
+                <select id="quarterFilter" class="rounded-xl border border-slate-300 px-3 py-2">
+                  <option value="1">Q1</option>
+                  <option value="2">Q2</option>
+                  <option value="3">Q3</option>
+                  <option value="4">Q4</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Year</label>
+                <select id="yearFilter" class="rounded-xl border border-slate-300 px-3 py-2"></select>
+              </div>
+              <div class="flex items-end">
+                <button id="pdfBtn" class="rounded-xl border border-slate-300 px-4 py-2">📄 PDF</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-5 gap-4">
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Paid by Customer</div><div id="quarterPaid" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Received</div><div id="quarterReceived" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Expenses</div><div id="quarterExpenses" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Net</div><div id="quarterNet" class="text-xl font-bold mono">€0.00</div></div>
+            <div class="border rounded-xl p-4"><div class="text-sm text-slate-500">Tax 19%</div><div id="quarterTax" class="text-xl font-bold mono">€0.00</div></div>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="card p-5">
+            <h2 class="text-xl font-semibold mb-4">Monthly Received vs Net</h2>
+            <canvas id="monthlyChart"></canvas>
+          </div>
+          <div class="card p-5">
+            <h2 class="text-xl font-semibold mb-4">Quarterly Net</h2>
+            <canvas id="quarterlyChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <h2 class="text-xl font-semibold mb-4">Expense Breakdown (selected quarter)</h2>
+          <div class="max-w-md mx-auto">
+            <canvas id="expenseChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card p-5 overflow-auto">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="text-xl font-semibold">Saved Bookings</h2>
+            <div class="flex flex-wrap gap-3">
+              <input id="searchInput" type="text" placeholder="Search description..." class="rounded-xl border border-slate-300 px-3 py-2" />
+              <button id="exportCsvBtn" class="rounded-xl border border-slate-300 px-4 py-2">Export CSV</button>
+              <label class="rounded-xl border border-slate-300 px-4 py-2 cursor-pointer">
+                Import CSV
+                <input id="importCsvInput" type="file" accept=".csv" class="hidden" />
+              </label>
+              <button id="clearAllBtn" class="rounded-xl border border-red-300 text-red-600 px-4 py-2">Clear All</button>
+            </div>
+          </div>
+
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b">
+                <th class="py-2 pr-4">Property</th>
+                <th class="py-2 pr-4">Description</th>
+                <th class="py-2 pr-4">Start</th>
+                <th class="py-2 pr-4">End</th>
+                <th class="py-2 pr-4">Days</th>
+                <th class="py-2 pr-4">Received</th>
+                <th class="py-2 pr-4">Net</th>
+                <th class="py-2 pr-4">Tax 19%</th>
+                <th class="py-2 pr-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' });
+    const storageKey = 'booking-finance-D-v1';
+    const propsKey = 'booking-finance-D-properties';
+    const themeKey = 'booking-finance-D-theme';
+    let editingId = null;
+    let monthlyChart = null, quarterlyChart = null, expenseChart = null;
+
+    const manualFields = ['property','description','startDate','endDate','people','amountPaid','amountReceived','quarterTaxes'];
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    function num(v) { return Number(v || 0); }
+    function getBookings() { return JSON.parse(localStorage.getItem(storageKey) || '[]'); }
+    function saveBookings(b) { localStorage.setItem(storageKey, JSON.stringify(b)); }
+    function getProperties() {
+      const stored = JSON.parse(localStorage.getItem(propsKey) || 'null');
+      return stored && stored.length ? stored : ['Main Apartment'];
+    }
+    function saveProperties(p) { localStorage.setItem(propsKey, JSON.stringify(p)); }
+
+    function calculateDays(s, e) {
+      if (!s || !e) return 0;
+      const diff = (new Date(e) - new Date(s)) / (1000*60*60*24);
+      return diff > 0 ? diff : 0;
+    }
+    function getQuarterFromDate(d) {
+      const m = new Date(d).getMonth() + 1;
+      return m <= 3 ? 1 : m <= 6 ? 2 : m <= 9 ? 3 : 4;
+    }
+    function escapeHtml(v) {
+      return String(v || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function calculateFields(row) {
+      const days = calculateDays(row.startDate, row.endDate);
+      const paid = num(row.amountPaid), received = num(row.amountReceived), qt = num(row.quarterTaxes);
+      const platformFee = paid - received;
+      const cleaningCost = 95;
+      const agencyFeeIgic = (received - cleaningCost) * 0.20 * 1.07;
+      const waterCost = days * 0.23;
+      const electricityCost = days * 2;
+      const internetCost = days * 1.09;
+      const mortgageInterest = days * 11.44;
+      const igic = paid * 0.07;
+      const net = received - cleaningCost - agencyFeeIgic - internetCost - igic - qt;
+      const tax19 = net * 0.19;
+      const totalExpenses = platformFee + cleaningCost + agencyFeeIgic + waterCost + electricityCost + internetCost + mortgageInterest + igic + qt;
+      return { days, platformFee, cleaningCost, agencyFeeIgic, waterCost, electricityCost, internetCost, mortgageInterest, igic, net, tax19, totalExpenses };
+    }
+
+    function getFormData() {
+      const row = {};
+      manualFields.forEach(id => row[id] = document.getElementById(id).value);
+      return { ...row, ...calculateFields(row) };
+    }
+
+    function setMoney(id, v) { document.getElementById(id).textContent = fmt.format(v); }
+
+    function updatePreview() {
+      const r = getFormData();
+      document.getElementById('days').value = r.days;
+      setMoney('previewPlatformFee', r.platformFee);
+      setMoney('previewCleaning', r.cleaningCost);
+      setMoney('previewAgencyFeeIgic', r.agencyFeeIgic);
+      setMoney('previewWater', r.waterCost);
+      setMoney('previewElectricity', r.electricityCost);
+      setMoney('previewInternet', r.internetCost);
+      setMoney('previewMortgage', r.mortgageInterest);
+      setMoney('previewIgic', r.igic);
+      setMoney('previewNet', r.net);
+      setMoney('previewTax', r.tax19);
+    }
+
+    function fillForm(row) {
+      manualFields.forEach(id => document.getElementById(id).value = row[id] ?? '');
+      updatePreview();
+    }
+
+    function populatePropertySelects() {
+      const props = getProperties();
+      const sel1 = document.getElementById('property');
+      const sel2 = document.getElementById('propertyFilter');
+      const cur1 = sel1.value, cur2 = sel2.value;
+      sel1.innerHTML = props.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+      sel2.innerHTML = '<option value="__all__">All Properties</option>' + props.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+      if (props.includes(cur1)) sel1.value = cur1;
+      if (cur2 === '__all__' || props.includes(cur2)) sel2.value = cur2;
+    }
+
+    function getFilteredBookings() {
+      const propFilter = document.getElementById('propertyFilter').value;
+      return getBookings().filter(b => propFilter === '__all__' || b.property === propFilter);
+    }
+
+    function renderKPIs() {
+      const totals = getFilteredBookings().reduce((a, b) => {
+        a.received += num(b.amountReceived); a.net += num(b.net); a.tax += num(b.tax19); a.count++;
+        return a;
+      }, { received:0, net:0, tax:0, count:0 });
+      document.getElementById('kpiReceived').textContent = fmt.format(totals.received);
+      document.getElementById('kpiNet').textContent = fmt.format(totals.net);
+      document.getElementById('kpiTax').textContent = fmt.format(totals.tax);
+      document.getElementById('kpiBookings').textContent = totals.count;
+    }
+
+    function populateMonthFilter() {
+      const sel = document.getElementById('monthFilter');
+      const cur = sel.value;
+      sel.innerHTML = monthNames.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+      sel.value = cur !== '' ? cur : String(new Date().getMonth());
+    }
+
+    function populateYearFilters() {
+      const bookings = getBookings();
+      const years = [...new Set(bookings.filter(b => b.startDate).map(b => new Date(b.startDate).getFullYear()))].sort((a,b) => a-b);
+      const cy = new Date().getFullYear();
+      const list = years.length ? years : [cy-1, cy, cy+1];
+      ['yearFilter','monthYearFilter'].forEach(id => {
+        const sel = document.getElementById(id);
+        const cur = sel.value;
+        sel.innerHTML = list.map(y => `<option value="${y}">${y}</option>`).join('');
+        sel.value = cur || String(cy);
+        if (!list.includes(Number(sel.value))) sel.value = String(list[0]);
+      });
+    }
+
+    function renderMonthSummary() {
+      const m = Number(document.getElementById('monthFilter').value);
+      const y = Number(document.getElementById('monthYearFilter').value);
+      const filtered = getFilteredBookings().filter(b => {
+        if (!b.startDate) return false;
+        const d = new Date(b.startDate);
+        return d.getFullYear() === y && d.getMonth() === m;
+      });
+      const t = filtered.reduce((a,b) => {
+        a.paid+=num(b.amountPaid); a.received+=num(b.amountReceived); a.exp+=num(b.totalExpenses); a.net+=num(b.net); a.tax+=num(b.tax19);
+        return a;
+      }, {paid:0,received:0,exp:0,net:0,tax:0});
+      document.getElementById('monthPaid').textContent = fmt.format(t.paid);
+      document.getElementById('monthReceived').textContent = fmt.format(t.received);
+      document.getElementById('monthExpenses').textContent = fmt.format(t.exp);
+      document.getElementById('monthNet').textContent = fmt.format(t.net);
+      document.getElementById('monthTax').textContent = fmt.format(t.tax);
+    }
+
+    function getQuarterFiltered() {
+      const q = Number(document.getElementById('quarterFilter').value);
+      const y = Number(document.getElementById('yearFilter').value);
+      return getFilteredBookings().filter(b => {
+        if (!b.startDate) return false;
+        const d = new Date(b.startDate);
+        return d.getFullYear() === y && getQuarterFromDate(b.startDate) === q;
+      });
+    }
+
+    function renderQuarterSummary() {
+      const t = getQuarterFiltered().reduce((a,b) => {
+        a.paid+=num(b.amountPaid); a.received+=num(b.amountReceived); a.exp+=num(b.totalExpenses); a.net+=num(b.net); a.tax+=num(b.tax19);
+        return a;
+      }, {paid:0,received:0,exp:0,net:0,tax:0});
+      document.getElementById('quarterPaid').textContent = fmt.format(t.paid);
+      document.getElementById('quarterReceived').textContent = fmt.format(t.received);
+      document.getElementById('quarterExpenses').textContent = fmt.format(t.exp);
+      document.getElementById('quarterNet').textContent = fmt.format(t.net);
+      document.getElementById('quarterTax').textContent = fmt.format(t.tax);
+    }
+
+    function renderTable() {
+      const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const bookings = getFilteredBookings()
+        .filter(b => !search || (b.description || '').toLowerCase().includes(search) || (b.property || '').toLowerCase().includes(search))
+        .sort((a,b) => (a.startDate < b.startDate ? 1 : -1));
+      const table = document.getElementById('bookingsTable');
+
+      if (!bookings.length) {
+        table.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-slate-500">No bookings found</td></tr>';
+        return;
+      }
+
+      table.innerHTML = bookings.map(b => `
+        <tr class="border-b">
+          <td class="py-2 pr-4">${escapeHtml(b.property)}</td>
+          <td class="py-2 pr-4">${escapeHtml(b.description)}</td>
+          <td class="py-2 pr-4">${b.startDate || ''}</td>
+          <td class="py-2 pr-4">${b.endDate || ''}</td>
+          <td class="py-2 pr-4 mono">${b.days}</td>
+          <td class="py-2 pr-4 mono">${fmt.format(num(b.amountReceived))}</td>
+          <td class="py-2 pr-4 mono">${fmt.format(num(b.net))}</td>
+          <td class="py-2 pr-4 mono">${fmt.format(num(b.tax19))}</td>
+          <td class="py-2 pr-4">
+            <div class="flex gap-3">
+              <button class="text-blue-600" onclick="editBooking(${b.id})">Edit</button>
+              <button class="text-red-600" onclick="deleteBooking(${b.id})">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getMonthlyData() {
+      const bookings = getFilteredBookings();
+      const cy = Number(document.getElementById('yearFilter').value) || new Date().getFullYear();
+      const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const received = new Array(12).fill(0);
+      const net = new Array(12).fill(0);
+      bookings.forEach(b => {
+        if (!b.startDate) return;
+        const d = new Date(b.startDate);
+        if (d.getFullYear() !== cy) return;
+        const m = d.getMonth();
+        received[m] += num(b.amountReceived);
+        net[m] += num(b.net);
+      });
+      return { labels, received, net };
+    }
+
+    function getQuarterlyData() {
+      const bookings = getFilteredBookings();
+      const cy = Number(document.getElementById('yearFilter').value) || new Date().getFullYear();
+      const net = [0,0,0,0];
+      bookings.forEach(b => {
+        if (!b.startDate) return;
+        const d = new Date(b.startDate);
+        if (d.getFullYear() !== cy) return;
+        net[getQuarterFromDate(b.startDate) - 1] += num(b.net);
+      });
+      return { labels: ['Q1','Q2','Q3','Q4'], net };
+    }
+
+    function getExpenseBreakdown() {
+      const t = getQuarterFiltered().reduce((a,b) => {
+        a.cleaning+=num(b.cleaningCost); a.agency+=num(b.agencyFeeIgic); a.internet+=num(b.internetCost);
+        a.igic+=num(b.igic); a.qt+=num(b.quarterTaxes); a.water+=num(b.waterCost);
+        a.elec+=num(b.electricityCost); a.mort+=num(b.mortgageInterest);
+        return a;
+      }, {cleaning:0,agency:0,internet:0,igic:0,qt:0,water:0,elec:0,mort:0});
+      return {
+        labels: ['Cleaning','Agency + IGIC','Internet','IGIC','Quarter Taxes','Water','Electricity','Mortgage'],
+        data: [t.cleaning,t.agency,t.internet,t.igic,t.qt,t.water,t.elec,t.mort]
+      };
+    }
+
+    function renderCharts() {
+      const dark = document.body.classList.contains('dark');
+      const textColor = dark ? '#e2e8f0' : '#0f172a';
+      const m = getMonthlyData(), q = getQuarterlyData(), e = getExpenseBreakdown();
+      if (monthlyChart) monthlyChart.destroy();
+      if (quarterlyChart) quarterlyChart.destroy();
+      if (expenseChart) expenseChart.destroy();
+
+      const baseOpts = { responsive: true, plugins: { legend: { labels: { color: textColor } } }, scales: { x: { ticks: { color: textColor } }, y: { ticks: { color: textColor } } } };
+
+      monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: { labels: m.labels, datasets: [
+          { label: 'Received', data: m.received, borderColor: '#16a34a', backgroundColor: '#16a34a', tension: 0.3 },
+          { label: 'Net', data: m.net, borderColor: dark ? '#e2e8f0' : '#0f172a', backgroundColor: dark ? '#e2e8f0' : '#0f172a', tension: 0.3 }
+        ]},
+        options: baseOpts
+      });
+
+      quarterlyChart = new Chart(document.getElementById('quarterlyChart'), {
+        type: 'bar',
+        data: { labels: q.labels, datasets: [{ label: 'Quarterly Net', data: q.net, backgroundColor: '#334155' }] },
+        options: baseOpts
+      });
+
+      expenseChart = new Chart(document.getElementById('expenseChart'), {
+        type: 'doughnut',
+        data: { labels: e.labels, datasets: [{ data: e.data, backgroundColor: ['#0f172a','#334155','#64748b','#16a34a','#f59e0b','#38bdf8','#a855f7','#ef4444'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
+      });
+    }
+
+    function exportCsv() {
+      const bookings = getBookings();
+      if (!bookings.length) return alert('No bookings to export.');
+      const headers = ['Property','Description','Start','End','Days','People','Paid','Received','PlatformFee','Cleaning','AgencyWithIGIC','Water','Electricity','Internet','Mortgage','IGIC','QuarterTaxes','Net','Tax19'];
+      const rows = bookings.map(b => [
+        b.property||'', (b.description||'').replace(/\n/g,' '),
+        b.startDate||'', b.endDate||'', b.days, b.people,
+        num(b.amountPaid), num(b.amountReceived), num(b.platformFee),
+        num(b.cleaningCost), num(b.agencyFeeIgic), num(b.waterCost),
+        num(b.electricityCost), num(b.internetCost), num(b.mortgageInterest),
+        num(b.igic), num(b.quarterTaxes), num(b.net), num(b.tax19)
+      ]);
+      const csv = [headers,...rows].map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'bookings_export.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let cur = [], field = '', inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+          else if (c === '"') { inQuotes = false; }
+          else field += c;
+        } else {
+          if (c === '"') inQuotes = true;
+          else if (c === ',') { cur.push(field); field = ''; }
+          else if (c === '\n') { cur.push(field); rows.push(cur); cur = []; field = ''; }
+          else if (c === '\r') {}
+          else field += c;
+        }
+      }
+      if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+      return rows.filter(r => r.length > 1);
+    }
+
+    function importCsv(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const rows = parseCsv(e.target.result);
+          if (rows.length < 2) return alert('CSV is empty.');
+          const headers = rows[0].map(h => h.trim());
+          const idx = (name) => headers.indexOf(name);
+          const bookings = getBookings();
+          const props = new Set(getProperties());
+          let added = 0;
+          for (let i = 1; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r[idx('Start')] && !r[idx('Description')]) continue;
+            const row = {
+              property: r[idx('Property')] || 'Main Apartment',
+              description: r[idx('Description')] || '',
+              startDate: r[idx('Start')] || '',
+              endDate: r[idx('End')] || '',
+              people: Number(r[idx('People')] || 1),
+              amountPaid: Number(r[idx('Paid')] || 0),
+              amountReceived: Number(r[idx('Received')] || 0),
+              quarterTaxes: Number(r[idx('QuarterTaxes')] || 0)
+            };
+            const calc = calculateFields(row);
+            bookings.push({ id: Date.now() + i, ...row, ...calc });
+            if (row.property) props.add(row.property);
+            added++;
+          }
+          saveBookings(bookings);
+          saveProperties([...props]);
+          refreshAll();
+          alert('Imported ' + added + ' bookings.');
+        } catch (err) { alert('Error reading CSV: ' + err.message); }
+      };
+      reader.readAsText(file);
+    }
+
+    function backupJson() {
+      const data = { bookings: getBookings(), properties: getProperties(), exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'costa_booking_backup_' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function restoreJson(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.bookings) throw new Error('Invalid file');
+          if (!confirm('This will replace all current data. Continue?')) return;
+          saveBookings(data.bookings);
+          if (data.properties && data.properties.length) saveProperties(data.properties);
+          refreshAll();
+          alert('Restored ' + data.bookings.length + ' bookings.');
+        } catch (err) { alert('Error reading file: ' + err.message); }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportPdf() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const q = document.getElementById('quarterFilter').value;
+      const y = document.getElementById('yearFilter').value;
+      const propFilter = document.getElementById('propertyFilter').value;
+      const propText = propFilter === '__all__' ? 'All Properties' : propFilter;
+
+      doc.setFontSize(16);
+      doc.text('Costa Booking Finance - Q' + q + ' ' + y, 14, 18);
+      doc.setFontSize(11);
+      doc.text('Property: ' + propText, 14, 26);
+      doc.text('Generated: ' + new Date().toLocaleString(), 14, 32);
+
+      const items = getQuarterFiltered();
+      const totals = items.reduce((a,b) => {
+        a.paid+=num(b.amountPaid); a.received+=num(b.amountReceived); a.exp+=num(b.totalExpenses); a.net+=num(b.net); a.tax+=num(b.tax19);
+        return a;
+      }, {paid:0,received:0,exp:0,net:0,tax:0});
+
+      doc.autoTable({
+        startY: 40,
+        head: [['Metric','Amount']],
+        body: [
+          ['Paid by Customer', fmt.format(totals.paid)],
+          ['Received', fmt.format(totals.received)],
+          ['Expenses', fmt.format(totals.exp)],
+          ['Net', fmt.format(totals.net)],
+          ['Tax 19%', fmt.format(totals.tax)]
+        ]
+      });
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Property','Description','Start','End','Days','Received','Net','Tax 19%']],
+        body: items.map(b => [
+          b.property || '',
+          (b.description || '').substring(0, 30),
+          b.startDate, b.endDate, b.days,
+          fmt.format(num(b.amountReceived)),
+          fmt.format(num(b.net)),
+          fmt.format(num(b.tax19))
+        ]),
+        styles: { fontSize: 8 }
+      });
+
+      doc.save('costa_booking_Q' + q + '_' + y + '.pdf');
+    }
+
+    function refreshAll() {
+      populatePropertySelects();
+      populateMonthFilter();
+      populateYearFilters();
+      renderKPIs();
+      renderMonthSummary();
+      renderQuarterSummary();
+      renderTable();
+      renderCharts();
+      updatePreview();
+    }
+
+    function resetForm() {
+      document.getElementById('bookingForm').reset();
+      document.getElementById('people').value = 1;
+      document.getElementById('amountPaid').value = 0;
+      document.getElementById('amountReceived').value = 0;
+      document.getElementById('quarterTaxes').value = 0;
+      document.getElementById('days').value = 0;
+      const props = getProperties();
+      document.getElementById('property').value = props[0];
+      editingId = null;
+      document.getElementById('submitBtn').textContent = 'Save';
+      updatePreview();
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const row = getFormData();
+      const bookings = getBookings();
+      if (editingId) {
+        const i = bookings.findIndex(b => b.id === editingId);
+        if (i !== -1) bookings[i] = { ...bookings[i], ...row };
+      } else {
+        bookings.push({ id: Date.now(), ...row });
+      }
+      saveBookings(bookings);
+      resetForm();
+      refreshAll();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+    document.getElementById('clearAllBtn').addEventListener('click', function() {
+      if (confirm('Delete all bookings?')) {
+        saveBookings([]);
+        resetForm();
+        refreshAll();
+      }
+    });
+
+    document.getElementById('addPropertyBtn').addEventListener('click', function() {
+      const name = prompt('Property name:');
+      if (!name) return;
+      const props = getProperties();
+      if (props.includes(name)) return alert('Already exists.');
+      props.push(name);
+      saveProperties(props);
+      populatePropertySelects();
+      document.getElementById('property').value = name;
+    });
+
+    document.getElementById('removePropertyBtn').addEventListener('click', function() {
+      const sel = document.getElementById('property');
+      const name = sel.value;
+      if (!name) return;
+      if (!confirm('Remove property "' + name + '" from the list? (Existing bookings keep this name)')) return;
+      const props = getProperties().filter(p => p !== name);
+      if (!props.length) props.push('Main Apartment');
+      saveProperties(props);
+      populatePropertySelects();
+    });
+
+    document.getElementById('propertyFilter').addEventListener('change', refreshAll);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+    document.getElementById('importCsvInput').addEventListener('change', function(e) {
+      if (e.target.files[0]) importCsv(e.target.files[0]);
+      e.target.value = '';
+    });
+    document.getElementById('backupBtn').addEventListener('click', backupJson);
+    document.getElementById('restoreInput').addEventListener('change', function(e) {
+      if (e.target.files[0]) restoreJson(e.target.files[0]);
+      e.target.value = '';
+    });
+    document.getElementById('pdfBtn').addEventListener('click', exportPdf);
+
+    document.getElementById('searchInput').addEventListener('input', renderTable);
+    document.getElementById('monthFilter').addEventListener('change', renderMonthSummary);
+    document.getElementById('monthYearFilter').addEventListener('change', renderMonthSummary);
+    document.getElementById('quarterFilter').addEventListener('change', function() { renderQuarterSummary(); renderCharts(); });
+    document.getElementById('yearFilter').addEventListener('change', function() { renderQuarterSummary(); renderCharts(); });
+
+    manualFields.forEach(id => document.getElementById(id).addEventListener('input', updatePreview));
+
+    document.getElementById('darkModeBtn').addEventListener('click', function() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem(themeKey, isDark ? 'dark' : 'light');
+      this.textContent = isDark ? '☀ Light' : '🌙 Dark';
+      renderCharts();
+    });
+
+    window.editBooking = function(id) {
+      const b = getBookings().find(x => x.id === id);
+      if (!b) return;
+      editingId = id;
+      document.getElementById('submitBtn').textContent = 'Update';
+      fillForm(b);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.deleteBooking = function(id) {
+      saveBookings(getBookings().filter(b => b.id !== id));
+      if (editingId === id) resetForm();
+      refreshAll();
+    }
+
+    if (localStorage.getItem(themeKey) === 'dark') {
+      document.body.classList.add('dark');
+      document.getElementById('darkModeBtn').textContent = '☀ Light';
+    }
+
+    document.getElementById('quarterFilter').value = String(Math.floor((new Date().getMonth()) / 3) + 1);
+
+    resetForm();
+    refreshAll();
+  </script>
+</body>
+</html>
