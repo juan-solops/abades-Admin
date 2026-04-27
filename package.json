@@ -1,0 +1,24 @@
+{
+  "name": "abades-admin",
+  "version": "1.0.1",
+  "description": "Abades Booking Finance - Full booking tracker",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static HTML project - no build step required'",
+    "lint": "echo 'Linting not configured for vanilla HTML project'"
+  },
+  "keywords": [
+    "booking",
+    "finance",
+    "admin"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/speed-insights": "^1.0.12"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}
